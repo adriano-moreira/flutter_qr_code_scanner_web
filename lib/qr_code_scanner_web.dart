@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
-import 'qr_code_scanner_web_impl_no_web.dart' if (dart.library.html) 'qr_code_scanner_web_impl.dart';
+import 'qr_code_scanner_web_impl_no_web.dart'
+    if (dart.library.html) 'qr_code_scanner_web_impl.dart';
 
 class QrCodeCameraWeb extends StatelessWidget {
   final void Function(String qrValue) qrCodeCallback;
@@ -27,4 +28,3 @@ class QrCodeCameraWeb extends StatelessWidget {
     );
   }
 }
-
