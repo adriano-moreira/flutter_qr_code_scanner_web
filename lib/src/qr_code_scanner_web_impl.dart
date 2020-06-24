@@ -6,14 +6,15 @@
 // - https://github.com/cozmo/jsQR
 import 'dart:async';
 import 'dart:html' as html;
-import 'dart:ui' as ui;
 import 'dart:js' as js;
+import 'dart:ui' as ui;
+
 import 'package:flutter/widgets.dart';
 
-/**
- * call global function jsQR
- * import https://github.com/cozmo/jsQR/blob/master/dist/jsQR.js on your index.html at web folder
- */
+///
+///call global function jsQR
+/// import https://github.com/cozmo/jsQR/blob/master/dist/jsQR.js on your index.html at web folder
+///
 dynamic _jsQR(d, w, h, o) {
   return js.context.callMethod('jsQR', [d, w, h, o]);
 }
@@ -38,9 +39,9 @@ class QrCodeCameraWebImpl extends StatefulWidget {
 }
 
 class _QrCodeCameraWebImplState extends State<QrCodeCameraWebImpl> {
-  double _width= 768;
-  double _height = 1280;
-  String _unique_key = UniqueKey().toString();
+//  final double _width = 1000;
+//  final double _height = _width / 4 * 3;
+  final String _uniqueKey = UniqueKey().toString();
 
   //see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/readyState
   final _HAVE_ENOUGH_DATA = 4;
@@ -63,20 +64,19 @@ class _QrCodeCameraWebImplState extends State<QrCodeCameraWebImpl> {
     _video = html.VideoElement();
     // Register an webcam
     ui.platformViewRegistry.registerViewFactory(
-        'webcamVideoElement$_unique_key', (int viewId) => _video);
+        'webcamVideoElement$_uniqueKey', (int viewId) => _video);
     // Create video widget
     _videoWidget = HtmlElementView(
-        key: UniqueKey(), viewType: 'webcamVideoElement$_unique_key');
+        key: UniqueKey(), viewType: 'webcamVideoElement$_uniqueKey');
 
     // Access the webcam stream
     html.window.navigator.getUserMedia(video: {'facingMode': 'environment'})
-
-//    mediaDevices.getUserMedia({
+//        .mediaDevices   //don't work rear camera
+//        .getUserMedia({
 //      'video': {
-//        'facingMode': {'exact': 'environment'}
+//        'facingMode': 'environment',
 //      }
 //    })
-
         .then((html.MediaStream stream) {
       _stream = stream;
       _video.srcObject = stream;
@@ -86,15 +86,21 @@ class _QrCodeCameraWebImplState extends State<QrCodeCameraWebImpl> {
     });
     _canvasElement = html.CanvasElement();
     _canvas = _canvasElement.getContext("2d");
-    _timer = Timer.periodic(Duration(milliseconds: 300), (timer) {
+    _timer = Timer.periodic(Duration(milliseconds: 20), (timer) {
       tick();
     });
   }
 
+  var waiting = false;
   tick() {
+    if (waiting) {
+      return;
+    }
+
     if (_video.readyState == _HAVE_ENOUGH_DATA) {
-      _canvasElement.width = _width.toInt();
-      _canvasElement.height = _height.toInt();
+      waiting = true;
+      _canvasElement.width = 1024;
+      _canvasElement.height = 1024;
       _canvas.drawImage(_video, 0, 0);
       var imageData = _canvas.getImageData(
           0, 0, _canvasElement.width, _canvasElement.height);
@@ -102,6 +108,7 @@ class _QrCodeCameraWebImplState extends State<QrCodeCameraWebImpl> {
           _jsQR(imageData.data, imageData.width, imageData.height, {
         'inversionAttempts': 'dontInvert',
       });
+      waiting = false;
       if (code != null) {
         String value = code['data'];
         this.widget.qrCodeCallback(value);
@@ -111,18 +118,14 @@ class _QrCodeCameraWebImplState extends State<QrCodeCameraWebImpl> {
 
   @override
   Widget build(BuildContext context) {
-
-    var bw = 768.0 / 2;
-    var bh = (bw / 4) * 3;
-
     return Container(
       height: double.infinity,
       width: double.infinity,
       child: FittedBox(
         fit: widget.fit,
         child: SizedBox(
-          width: bw,
-          height: bh,
+          width: 400,
+          height: 300,
           child: _videoWidget,
         ),
       ),
@@ -135,15 +138,13 @@ class _QrCodeCameraWebImplState extends State<QrCodeCameraWebImpl> {
     _video.pause();
 
     Future.delayed(Duration(seconds: 2), () {
-
       try {
         _stream?.getTracks()?.forEach((mt) {
-                mt.stop();
-              });
+          mt.stop();
+        });
       } catch (e) {
         print('error on dispose qrcode: $e');
       }
-
     });
     super.dispose();
   }

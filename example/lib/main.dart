@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_qr_code_scanner_web/main.dart';
 
 void main() {
   runApp(MyApp());
@@ -10,7 +11,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-
   @override
   void initState() {
     super.initState();
@@ -21,10 +21,30 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: const Text('flutter_qr_code_reader_web example'),
         ),
-        body: Center(
-        ),
+        body: Page(),
+      ),
+    );
+  }
+}
+
+class Page extends StatelessWidget {
+  const Page({
+    Key key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: QrCodeCameraWeb(
+        qrCodeCallback: (qr) {
+          print('qrcode: $qr');
+          Scaffold.of(context).hideCurrentSnackBar();
+          Scaffold.of(context).showSnackBar(SnackBar(
+            content: Text(qr),
+          ));
+        },
       ),
     );
   }
