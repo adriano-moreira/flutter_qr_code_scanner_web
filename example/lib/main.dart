@@ -29,22 +29,43 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-class Page extends StatelessWidget {
+class Page extends StatefulWidget {
   const Page({
     Key key,
   }) : super(key: key);
 
   @override
+  _PageState createState() => _PageState();
+}
+
+class _PageState extends State<Page> {
+  num count = 0;
+  String lastQRCode = '';
+
+  @override
   Widget build(BuildContext context) {
     return Center(
-      child: QrCodeCameraWeb(
-        qrCodeCallback: (qr) {
-          print('qrcode: $qr');
-          Scaffold.of(context).hideCurrentSnackBar();
-          Scaffold.of(context).showSnackBar(SnackBar(
-            content: Text(qr),
-          ));
-        },
+      child: Column(
+        children: [
+          Flexible(
+            child: QrCodeCameraWeb(
+              qrCodeCallback: (qr) {
+                setState(() {
+                  count++;
+                  lastQRCode = qr;
+                  print('qrcode: $count  $qr');
+                });
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              '$count $lastQRCode',
+              style: Theme.of(context).textTheme.headline4,
+            ),
+          ),
+        ],
       ),
     );
   }

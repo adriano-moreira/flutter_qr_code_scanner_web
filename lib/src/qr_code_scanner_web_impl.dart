@@ -5,7 +5,9 @@
 // - https://kevinwilliams.dev/blog/taking-photos-with-flutter-web
 // - https://github.com/cozmo/jsQR
 import 'dart:async';
+// ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
+// ignore: avoid_web_libraries_in_flutter
 import 'dart:js' as js;
 import 'dart:ui' as ui;
 
@@ -44,14 +46,13 @@ class _QrCodeCameraWebImplState extends State<QrCodeCameraWebImpl> {
   final String _uniqueKey = UniqueKey().toString();
 
   //see https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/readyState
-  final _HAVE_ENOUGH_DATA = 4;
+  static const _HAVE_ENOUGH_DATA = 4;
 
   // Webcam widget to insert into the tree
   Widget _videoWidget;
 
   // VideoElement
   html.VideoElement _video;
-  Timer _timer;
   html.CanvasElement _canvasElement;
   html.CanvasRenderingContext2D _canvas;
   html.MediaStream _stream;
@@ -86,21 +87,15 @@ class _QrCodeCameraWebImplState extends State<QrCodeCameraWebImpl> {
     });
     _canvasElement = html.CanvasElement();
     _canvas = _canvasElement.getContext("2d");
-    _timer = Timer.periodic(Duration(milliseconds: 20), (timer) {
+    Future.delayed(Duration(milliseconds: 20), () {
       tick();
     });
   }
 
-  var waiting = false;
   tick() {
-    if (waiting) {
-      return;
-    }
-
     if (_video.readyState == _HAVE_ENOUGH_DATA) {
-      waiting = true;
-      _canvasElement.width = 1024;
-      _canvasElement.height = 1024;
+      _canvasElement.width = 768;
+      _canvasElement.height = 768;
       _canvas.drawImage(_video, 0, 0);
       var imageData = _canvas.getImageData(
           0, 0, _canvasElement.width, _canvasElement.height);
@@ -108,12 +103,12 @@ class _QrCodeCameraWebImplState extends State<QrCodeCameraWebImpl> {
           _jsQR(imageData.data, imageData.width, imageData.height, {
         'inversionAttempts': 'dontInvert',
       });
-      waiting = false;
       if (code != null) {
         String value = code['data'];
         this.widget.qrCodeCallback(value);
       }
     }
+    Future.delayed(Duration(milliseconds: 10), () => tick());
   }
 
   @override
@@ -134,10 +129,9 @@ class _QrCodeCameraWebImplState extends State<QrCodeCameraWebImpl> {
 
   @override
   void dispose() {
-    _timer?.cancel();
     _video.pause();
 
-    Future.delayed(Duration(seconds: 2), () {
+    Future.delayed(Duration(milliseconds: 1), () {
       try {
         _stream?.getTracks()?.forEach((mt) {
           mt.stop();
