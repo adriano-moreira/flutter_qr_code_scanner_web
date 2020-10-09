@@ -92,17 +92,30 @@ class _QrCodeCameraWebImplState extends State<QrCodeCameraWebImpl> {
     });
   }
 
+  bool _disposed = false;
   tick() {
+    if(_disposed) {
+      return;
+    }
+
     if (_video.readyState == _HAVE_ENOUGH_DATA) {
-      _canvasElement.width = 768;
-      _canvasElement.height = 768;
+      _canvasElement.width = _video.videoWidth;
+      _canvasElement.height = _video.videoHeight;
       _canvas.drawImage(_video, 0, 0);
       var imageData = _canvas.getImageData(
-          0, 0, _canvasElement.width, _canvasElement.height);
-      js.JsObject code =
-          _jsQR(imageData.data, imageData.width, imageData.height, {
-        'inversionAttempts': 'dontInvert',
-      });
+        0,
+        0,
+        _canvasElement.width,
+        _canvasElement.height,
+      );
+      js.JsObject code = _jsQR(
+        imageData.data,
+        imageData.width,
+        imageData.height,
+        {
+          'inversionAttempts': 'dontInvert',
+        },
+      );
       if (code != null) {
         String value = code['data'];
         this.widget.qrCodeCallback(value);
@@ -129,8 +142,8 @@ class _QrCodeCameraWebImplState extends State<QrCodeCameraWebImpl> {
 
   @override
   void dispose() {
+    _disposed = true;
     _video.pause();
-
     Future.delayed(Duration(milliseconds: 1), () {
       try {
         _stream?.getTracks()?.forEach((mt) {
